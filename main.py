@@ -35,6 +35,7 @@ def get_dxf_data(dxfname):
 pts = get_dxf_data('lwpoly.dxf')
 
 
+
 out = Image.new("RGB", (400, 400), (255, 255, 255))
 img = ImageDraw.Draw(out)
 
