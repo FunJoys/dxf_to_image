@@ -1,4 +1,3 @@
-
 import sys
 import ezdxf
 import matplotlib.pyplot as plt
@@ -7,25 +6,33 @@ from ezdxf.addons.drawing import RenderContext, Frontend
 from ezdxf.addons.drawing.matplotlib import MatplotlibBackend
 
 
-try:
-    doc1 = ezdxf.readfile("weibo.dxf")
-except IOError:
-    print(f'Not a DXF file or a generic I/O error.')
-    sys.exit(1)
-except ezdxf.DXFStructureError:
-    print(f'Invalid or corrupted DXF file.')
-    sys.exit(2)
+class GetData:
+    def __init__(self, dxfname):
+        self.dxfname = dxfname
 
-msp = doc1.modelspace()  # add new entities to the modelspace
+    def read_dxf(self):
+        try:
+            doc1 = ezdxf.readfile(self.dxfname)
+        except IOError:
+            print(f'Not a DXF file or a generic I/O error.')
+            sys.exit(1)
+        except ezdxf.DXFStructureError:
+            print(f'Invalid or corrupted DXF file.')
+            sys.exit(2)
+        return doc1
 
-pts = []
+    def get_polyline_data(self):
+        msp = self.read_dxf().modelspace()  # add new entities to the modelspace
+        pts = []
+        for i in msp:
+            if i.dxftype() == 'LWPOLYLINE' and i.dxf.layer == 'Top':
+                pts.append(i.get_points('xyb'))
+        return pts
 
 
-for i in msp:
-    if i.dxftype() == 'LWPOLYLINE' and i.dxf.layer == 'Top':
-        pts.append(i.get_points('xyb'))
-
-print(pts)
+dxfname = "weibo.dxf"
+dxf1 = GetData(dxfname)
+pts = dxf1.get_polyline_data()
 
 doc2 = ezdxf.new('R2000')  # hatch requires the DXF R2000 (AC1015) format or later
 msp2 = doc2.modelspace()  # adding entities to the model space
@@ -37,13 +44,13 @@ for i in range(len(pts)):
     hatch.paths.add_polyline_path(pts[i], is_closed=True, flags=ezdxf.const.BOUNDARY_PATH_EXTERNAL)
 
 
+def draw_dxf(doc, dpi):
+    fig = plt.figure()
+    ax = fig.add_axes([0, 0, 1, 1])
+    ctx = RenderContext(doc)
+    out = MatplotlibBackend(ax)
+    Frontend(ctx, out).draw_layout(doc.modelspace(), finalize=True)
+    fig.savefig('your.png', dpi=dpi)
 
-
-fig = plt.figure()
-ax = fig.add_axes([0, 0, 1, 1])
-ctx = RenderContext(doc2)
-out = MatplotlibBackend(ax)
-Frontend(ctx, out).draw_layout(doc2.modelspace(), finalize=True)
-fig.savefig('your.png', dpi=300)
-
+draw_dxf(doc2, dpi=300)
 
