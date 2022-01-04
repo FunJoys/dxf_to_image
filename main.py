@@ -39,9 +39,11 @@ for i in msp:
 
 class Arc_atts:
 
-    def __init__(self, pts_in, res):
+    def __init__(self, pts_in, res, offsetX=200, offsetY=200):
         self.pts_in = pts_in
         self.res = res
+        self.offsetX = offsetX
+        self.offsetY = offsetY
 
     def draw_arc(self):
         arcs = []
@@ -50,36 +52,41 @@ class Arc_atts:
                 arcs.append([self.pts_in[i], self.pts_in[i + 1]])
         return arcs
 
-    def centers(self, i):
-        return [ezdxf.math.bulge_to_arc(ezdxf.math.Vec2(self.draw_arc()[i][0][0], self.draw_arc()[i][1][0]), ezdxf.math.Vec2(self.draw_arc()[i][0][1], self.draw_arc()[i][1][1]), self.draw_arc()[i][0][2])[0]][0]
+    def centers(self, arc_i):
+        return ezdxf.math.bulge_to_arc((self.draw_arc()[arc_i][0][0]*self.res+self.offsetX, self.draw_arc()[arc_i][0][1]*self.res+self.offsetY),
+                                       (self.draw_arc()[arc_i][1][0]*self.res+self.offsetX, self.draw_arc()[arc_i][1][1]*self.res+self.offsetY),
+                                       self.draw_arc()[arc_i][0][2])[0]
+    def radius(self, arc_i):
+        return ezdxf.math.bulge_to_arc((self.draw_arc()[arc_i][0][0]*self.res+self.offsetX, self.draw_arc()[arc_i][0][1]*self.res+self.offsetY),
+                                       (self.draw_arc()[arc_i][1][0]*self.res+self.offsetX, self.draw_arc()[arc_i][1][1]*self.res+self.offsetY),
+                                       self.draw_arc()[arc_i][0][2])[3]
 
-    def start_angle(self, i):
-        return [int(ezdxf.math.bulge_to_arc(ezdxf.math.Vec2(self.draw_arc()[i][0][0], self.draw_arc()[i][1][0]), ezdxf.math.Vec2(self.draw_arc()[i][0][1], self.draw_arc()[i][1][1]), self.draw_arc()[i][0][2])[1]*180/3.14)][0]
+    def start_angle(self, arc_i):
+        return int(ezdxf.math.bulge_to_arc((self.draw_arc()[arc_i][0][0], self.draw_arc()[arc_i][0][1]),
+                                       (self.draw_arc()[arc_i][1][0], self.draw_arc()[arc_i][1][1]),
+                                       self.draw_arc()[arc_i][0][2])[1]*180/3.14)
 
-    def end_angle(self, i):
-        return [int(ezdxf.math.bulge_to_arc(ezdxf.math.Vec2(self.draw_arc()[i][0][0], self.draw_arc()[i][1][0]), ezdxf.math.Vec2(self.draw_arc()[i][0][1], self.draw_arc()[i][1][1]), self.draw_arc()[i][0][2])[2]*180/3.14)][0]
+    def end_angle(self, arc_i):
+        return int(ezdxf.math.bulge_to_arc((self.draw_arc()[arc_i][0][0], self.draw_arc()[arc_i][0][1]),
+                                       (self.draw_arc()[arc_i][1][0], self.draw_arc()[arc_i][1][1]),
+                                       self.draw_arc()[arc_i][0][2])[2]*180/3.14)
 
-    def radius(self, i):
-        return [ezdxf.math.bulge_to_arc(ezdxf.math.Vec2(self.draw_arc()[i][0][0], self.draw_arc()[i][1][0]), ezdxf.math.Vec2(self.draw_arc()[i][0][1], self.draw_arc()[i][1][1]), self.draw_arc()[i][0][2])[3]][0]
-
-    def bounding_box(self, i):
-        return list(map(lambda x: int((x-self.radius(i))), self.centers(i))) + list(map(lambda x: int((x+self.radius(i))), self.centers(i)))
+    def bounding_box(self, arc_i):
+        return list(map(lambda x: x - self.radius(arc_i), self.centers(arc_i))) + list(map(lambda x: x + self.radius(arc_i), self.centers(arc_i)))
 
 
-res = 10
+res = 5
 
-t = Arc_atts(pts, res)
+t = Arc_atts(pts, res, offsetX=200, offsetY=200)
 
-print(t.centers(1))
-print(t.bounding_box(1))
 
 out = Image.new("RGB", (400, 400), (255, 255, 255))
 
 
 d = ImageDraw.Draw(out)
 
-
-d.ellipse(t.bounding_box(0),t.start_angle(0), t.end_angle(0))
+for i in range(2):
+    d.chord(t.bounding_box(i), t.start_angle(i), t.end_angle(i), fill='blue')
 
 out.show()
 
