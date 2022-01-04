@@ -41,6 +41,7 @@ class DrawDxf:
         msp2 = doc2.modelspace()  # adding entities to the model space
         hatch = msp2.add_hatch(color=1, dxfattribs={
             'hatch_style': ezdxf.const.HATCH_STYLE_NESTED})
+
         for i in range(len(self.pts)):
             hatch.paths.add_polyline_path(self.pts[i], is_closed=True, flags=ezdxf.const.BOUNDARY_PATH_EXTERNAL)
 
@@ -50,7 +51,6 @@ class DrawDxf:
         out = MatplotlibBackend(ax)
         Frontend(ctx, out).draw_layout(doc2.modelspace(), finalize=True)
         fig.savefig('your.png', dpi=self.dpi)
-
 
 
 
